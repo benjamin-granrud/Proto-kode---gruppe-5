@@ -1,0 +1,531 @@
+#include <Adafruit_NeoPixel.h>
+#include <avr/wdt.h>
+
+#define LED_COUNT 275
+#define LED_count 20
+#define LETTER_HEIGHT 5
+#define LETTER_WIDTH 5
+
+int t;
+int d;
+int bt1_led = 12;
+int bt2_led = 10;
+int bt3_led = 11;
+int bt4_led = 9;
+int bt5_led = 8;
+int bt1 = 7;
+int bt2 = 6;
+int bt3 = 5;
+int bt4 = 2;
+int bt5 = 3;
+int Start;
+int EndTime;
+int game_delay = 5;
+
+int red[] = {0,0,255};
+
+Adafruit_NeoPixel led(LED_COUNT, 4, NEO_GBR + NEO_KHZ800);
+
+bool juks_over[] = 
+{0,0,0,0,0,
+0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,1,0,
+0,0,0,0,1,
+1,1,1,1,0,
+0,0,0,0,0,
+1,1,1,1,1,
+0,0,0,0,1,
+0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,
+1,1,1,1,1,
+0,0,1,0,0,
+1,1,0,1,1,
+0,0,0,0,0,
+0,1,1,0,1,
+0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,
+1,0,1,1,0,};
+
+const byte patterns[10][20] = {
+{1,1,1,1,1,1,0,0,0,1,1,1,1,1,1}, //0
+{0,0,0,0,0,0,1,0,0,0,1,1,1,1,1}, //1
+{1,0,1,1,1,1,0,1,0,1,1,1,1,0,1}, //2
+{1,0,1,0,1,1,0,1,0,1,1,1,1,1,1}, //3
+{1,1,1,0,0,0,0,1,0,0,1,1,1,1,1}, //4
+{1,1,1,0,1,1,0,1,0,1,1,0,1,1,1}, //5
+{1,1,1,1,1,1,0,1,0,1,1,0,1,1,1}, //6
+{1,0,0,0,0,1,0,0,0,0,1,1,1,1,1}, //7
+{1,1,1,1,1,1,0,1,0,1,1,1,1,1,1}, //8
+{1,1,1,0,0,1,0,1,0,0,1,1,1,1,1}, //9
+};
+ 
+bool game_over_letters[] = 
+{0,1,1,1,0,
+1,0,0,0,1,
+0,0,0,0,0,0,0,0,0,0,0,1,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,
+0,1,1,1,1,
+1,0,1,0,0,
+0,1,1,1,1,
+0,0,0,0,0,
+1,1,1,1,1,
+0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+1,1,1,1,1,
+0,0,0,0,0,
+1,1,1,1,1,
+1,0,1,0,1,
+1,0,0,0,1,
+0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,
+0,1,1,1,0,
+1,0,0,0,1,
+0,1,1,1,0,
+0,0,0,0,0,
+1,1,1,1,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,
+1,1,1,1,0,
+0,0,0,0,0,
+1,1,1,1,1,
+1,0,1,0,1,
+1,0,0,0,1,
+0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,
+1,0,1,0,0,
+0,1,0,1,1,
+};
+
+bool din_tid[] = 
+{1,0,0,0,0,
+1,1,1,1,1,
+0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,
+1,1,1,1,1,
+0,0,0,0,0,
+1,1,1,1,1,
+1,0,0,0,1,
+0,1,1,1,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,1,0,1,0,
+0,0,0,0,0,
+0,0,0,0,0,
+0,0,0,0,0,
+0,0,0,0,0,
+0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,
+0,0,0,0,0,
+0,0,0,0,0,
+0,0,0,0,0,
+0,0,0,0,0,
+0,1,1,0,1,
+0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,
+1,0,1,1,0,/*
+0,0,0,0,0,
+1,1,1,1,1,
+1,0,1,0,1,
+1,0,0,0,1,
+0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,0,
+0,0,1,0,0,
+1,1,0,1,1,*/};
+
+
+
+
+void setup(){
+pinMode(bt1,INPUT_PULLUP);
+pinMode(bt2,INPUT_PULLUP);
+pinMode(bt3,INPUT_PULLUP);
+pinMode(bt4,INPUT_PULLUP);
+pinMode(bt5,INPUT_PULLUP);
+pinMode(bt1_led, OUTPUT);
+pinMode(bt2_led, OUTPUT);
+pinMode(bt3_led, OUTPUT);
+pinMode(bt4_led, OUTPUT);
+pinMode(bt5_led, OUTPUT);
+
+led.begin();
+Serial.begin(9600);
+
+led.clear();
+led.show();
+int k = 0; 
+int button_state = 1;
+  while(button_state != 0){
+  //game_over(155);
+  display_tid(51);
+  digitalWrite(bt1_led, HIGH);
+  digitalWrite(bt3_led, HIGH);
+  digitalWrite(bt5_led, HIGH);
+  
+  led.show();
+  delay(500);
+  led.clear();
+  led.show();
+  
+  digitalWrite(bt1_led, LOW);
+  digitalWrite(bt3_led, LOW);
+  digitalWrite(bt5_led, LOW);
+  
+  delay(500);
+  
+  
+
+  int level1 = digitalRead(bt1);
+  int level2 = digitalRead(bt3);
+  int level3 = digitalRead(bt5);
+
+  if (level1 == 0){
+  button_state = digitalRead(bt1);
+  d = 75;
+  break;
+  }
+  
+  if (level2 == 0){
+  button_state = digitalRead(bt3);
+  d = 50;
+  break;
+  }
+
+  if (level3 == 0){
+  button_state = digitalRead(bt5);
+  d = 30;
+  break;
+  }
+
+  if (k > 5){
+    resetArduino();
+  }
+  k = k + 1;
+  Serial.println(k);
+  }
+display_tid(3);
+delay(750);
+display_tid(2);
+delay(750);
+display_tid(1);
+delay(750);
+led.clear();
+Start = millis();
+}
+
+void loop(){
+
+d = d;
+int mode = game();
+
+  if(mode == 1){ 
+EndTime = ((millis()-Start)/1000);
+Serial.println(EndTime);
+  game_over(275);
+  
+  int button_state = 1;
+  int h = 0;
+  while(button_state != 0){
+    digitalWrite(bt3_led, HIGH);
+    delay(500);
+    digitalWrite(bt3_led, LOW);
+    delay(500);
+    button_state = digitalRead(bt3);
+    h = h+1;
+    Serial.println(h);
+    if (h > 5){
+      break;
+    }
+    }
+
+  display_tid(EndTime*1.14);
+  tid_over();
+ int g = 0;
+  while(g < 5){
+  int button = digitalRead(bt5);
+   if (button == 0){
+    break;}
+   digitalWrite(bt5_led, HIGH);
+   delay(500);
+   digitalWrite(bt5_led, LOW);
+   delay(500);
+   g = g+1;
+  }
+
+  led.clear();
+  resetArduino();
+  }
+
+  if (mode==0){
+
+    if(d>80){
+    d = d-3;}
+
+    if(d>60){
+    d = d-2;
+    }
+    
+    d=d-1;
+  }
+  int j = 0;
+  if (d<5){
+    j= j+1;
+
+    if(j<4){
+
+    juks();
+    delay(3000);
+    resetArduino();
+    }
+  }
+
+}
+
+
+int game(){
+  int StartTimer = millis();
+int num = random(0,5);
+
+switch(num){
+  
+  case 0:
+  
+for (int h=10; h<37; h++){
+
+ int value = digitalRead(bt1);
+
+  led.setPixelColor(h,255,0,0);
+  led.setPixelColor(h-3,0,0,0);
+  delay(d);
+  led.show();
+   
+ 	if ((value == 0) && (h>=12)){
+      digitalWrite(bt1_led,LOW);
+      led.setPixelColor(h,0,255,0);
+      led.setPixelColor(h-1,0,255,0);
+      led.setPixelColor(h-2,0,255,0);
+      digitalWrite(bt1_led,HIGH);
+      delay(50);
+      digitalWrite(bt1_led,LOW);
+  		led.show();
+  		delay(d);
+  		led.clear();
+      return(0);
+      break;}
+      
+  else if (h==36){
+      led.clear();
+        return(1);
+        break;}
+  }
+
+
+case 1:
+  
+for (int i=67; i<93; i++){
+ int value = digitalRead(bt2);
+
+  led.setPixelColor(i,255,0,0);
+  led.setPixelColor(i-3,0,0,0);
+  delay(d);
+  led.show();
+   
+ 	if ((value == 0) && (i>=69)){
+      digitalWrite(bt2_led,LOW);
+      led.setPixelColor(i,0,255,0);
+      led.setPixelColor(i-1,0,255,0);
+      led.setPixelColor(i-2,0,255,0);
+      digitalWrite(bt2_led,HIGH);
+      delay(50);
+      digitalWrite(bt2_led,LOW);
+  		led.show();
+  		delay(d);
+  		led.clear();
+      return(0);
+      break;}
+
+  else if (i==92){
+    led.clear();
+      return(1);
+      break;}
+}
+
+
+
+  case 2:
+  
+for (int i=124; i<150; i++){
+ int value = digitalRead(bt3);
+
+  led.setPixelColor(i,255,0,0);
+  led.setPixelColor(i-3,0,0,0);
+  delay(d);
+  led.show();
+   
+ 	if ((value == 0) && (i>=126)){
+      digitalWrite(bt3_led,LOW);
+      led.setPixelColor(i,0,255,0);
+      led.setPixelColor(i-1,0,255,0);
+      led.setPixelColor(i-2,0,255,0);
+      digitalWrite(bt3_led,HIGH);
+      delay(50);
+      digitalWrite(bt3_led,LOW);
+  		led.show();
+  		delay(d);
+  		led.clear();
+      return(0);
+      break;}
+
+  else if (i==149){ 
+    led.clear();
+      return(1);
+      break;
+  }
+  }
+
+
+  
+
+
+  case 3:
+  
+for (int i=181; i<207; i++){
+ int value = digitalRead(bt4);
+
+  led.setPixelColor(i,255,0,0);
+  led.setPixelColor(i-3,0,0,0);
+  delay(d);
+  led.show();
+   
+ 	if ((value == 0) && (i>=183)){
+      digitalWrite(bt4_led,LOW);
+      led.setPixelColor(i,0,255,0);
+      led.setPixelColor(i-1,0,255,0);
+      led.setPixelColor(i-2,0,255,0);
+      digitalWrite(bt4_led,HIGH);
+      delay(50);
+      digitalWrite(bt4_led,LOW);
+  		led.show();
+  		delay(d);
+  		led.clear();
+      return(0);
+      break;}
+
+    else if (i==206){ 
+    led.clear();
+      return(1);
+      break;}
+  }
+
+  
+ 
+  
+  case 4:
+  
+  for (int i=238; i<264; i++){
+ int value = digitalRead(bt5);
+
+  led.setPixelColor(i,255,0,0);
+  led.setPixelColor(i-3,0,0,0);
+  delay(d);
+  led.show();
+   
+ 	if ((value == 0) && (i>=240)){
+      digitalWrite(bt5_led,LOW);
+      led.setPixelColor(i,0,255,0);
+      led.setPixelColor(i-1,0,255,0);
+      led.setPixelColor(i-2,0,255,0);
+      digitalWrite(bt5_led,HIGH);
+      delay(50);
+      digitalWrite(bt5_led,LOW);
+  		led.show();
+  		delay(d);
+  		led.clear();
+      return(0);
+      break;}
+
+  else if (i==263){ 
+    led.clear();
+      return(1);
+      break;}
+  }
+
+}
+}
+
+void tid_over(){
+  for (int k = 0; k<=LED_COUNT-63;k++){
+    int val = din_tid[k];
+    if(val==1){
+    led.setPixelColor(k,255,0,255);
+    }
+  }
+  led.show();
+  delay(2000);
+}
+
+
+int game_over(int l) {
+  
+    for (int i = 0; i <= l; i++) {
+      int val = game_over_letters[i];
+      if (val == 1) {
+        led.setPixelColor(i, 0,0,255);}
+      led.show();
+    }
+}
+
+
+
+void display_tid(int tid) {
+
+led.clear();
+
+  if (tid<10){
+    for(int j=109; j<=124;j++){
+        if (patterns[0][j-109]==1){
+          led.setPixelColor(j,255,0,255);}
+      }
+    for(int j=151; j<=166;j++){
+        if (patterns[tid][j-151]==1){
+          led.setPixelColor(j,255,0,255);}
+      }
+      led.show();
+
+  }
+
+  if (tid>=10){
+
+  int ener = tid % 10;
+  int tier = tid /10 % 10;
+
+    for(int j=109; j<=124;j++){
+        if (patterns[tier][j-109]==1){
+          led.setPixelColor(j,255,0,255);}
+      }
+    for(int j=151; j<=166;j++){
+        if (patterns[ener][j-151]==1){
+          led.setPixelColor(j,255,0,255);}
+      }
+      led.show();
+      
+  }
+}
+
+
+void juks() {
+
+  for (int i = 0; i <= 161-5; i++) {
+      int val = juks_over[i];
+      if (val == 1) {
+        led.setPixelColor(i, 0, 0, 255);
+      }
+      led.show();
+    }
+  }
+
+
+void resetArduino() {
+  
+  wdt_disable();
+  wdt_enable(WDTO_15MS);
+  while (true);
+}
+
